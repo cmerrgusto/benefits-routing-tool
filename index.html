@@ -33,7 +33,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .result.oowner{background:#EEEDFE;border:0.5px solid #AFA9EC}
 .result.engagement{background:#FBEAF0;border:0.5px solid #ED93B1}
 .result.warning{background:#FFF8E6;border:0.5px solid #F5C842}
-.result.outofscope{background:#FCEBEB;border:0.5px solid #F09595}
 .rtag{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
 .result.benhelp .rtag{color:#0F6E56}
 .result.ticket .rtag{color:#185FA5}
@@ -43,7 +42,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .result.oowner .rtag{color:#3C3489}
 .result.engagement .rtag{color:#993556}
 .result.warning .rtag{color:#856404}
-.result.outofscope .rtag{color:#A32D2D}
 .rtitle{font-size:16px;font-weight:500;margin-bottom:6px}
 .result.benhelp .rtitle{color:#085041}
 .result.ticket .rtitle{color:#0C447C}
@@ -53,7 +51,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .result.oowner .rtitle{color:#26215C}
 .result.engagement .rtitle{color:#72243E}
 .result.warning .rtitle{color:#5c4300}
-.result.outofscope .rtitle{color:#791F1F}
 .rbody{font-size:13px;line-height:1.7;margin-bottom:10px}
 .result.benhelp .rbody{color:#0F6E56}
 .result.ticket .rbody{color:#185FA5}
@@ -63,7 +60,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .result.oowner .rbody{color:#26215C}
 .result.engagement .rbody{color:#72243E}
 .result.warning .rbody{color:#5c4300}
-.result.outofscope .rbody{color:#791F1F}
 .presteps{background:#fff;border:0.5px solid #E0DED8;border-radius:8px;padding:10px 13px;margin-bottom:10px}
 .presteps-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#856404;margin-bottom:6px}
 .presteps-body{font-size:12px;color:#1a1a18;line-height:1.7}
@@ -85,7 +81,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .copy-btn:hover{background:#f5f5f3}
 .notebox{background:#f5f5f3;border-radius:8px;padding:8px 11px;margin-top:8px;font-size:12px;color:#5F5E5A;line-height:1.6}
 .notebox a{color:#185FA5;text-decoration:none}
-.notebox a:hover{text-decoration:underline}
 .restart-btn{margin-top:1rem;font-size:12px;color:#5F5E5A;background:transparent;border:0.5px solid #B4B2A9;border-radius:8px;padding:7px 13px;cursor:pointer}
 .restart-btn:hover{background:#f5f5f3}
 </style>
@@ -94,12 +89,67 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="container">
   <div class="header">
     <h1>Benefits Services Routing Tool</h1>
-    <p>Answer a few questions to find the correct ticket reason, owner, and template.</p>
+    <p>Not sure where to route a benefits request? Answer a few quick questions to find the correct team, ticket reason, and template — no guessing required.</p>
   </div>
   <div class="prog-wrap" id="prog"></div>
   <div id="main"></div>
 </div>
 <script>
+const BENS_EQ_TPL=[
+{n:"Have you confirmed through BenHelp that a ticket is required?",v:"List the Slack thread URL where guidance was given",t:"fill"},
+{n:"Employee/Employer Name",v:"Clearly list the name of the employee or employer impacted",t:"fill"},
+{n:"Employee/Group Hippo Link",v:"Include both employee and group Hippo links if the issue involves specific employee errors",t:"fill"},
+{n:"Ticket Reason",v:"Identify the issue or concern the employee/employer is experiencing",t:"fill"},
+{n:"Salesforce Care Case Number",v:"Should already be linked in the ticket as a required field",t:"fill"},
+{n:"Salesforce MOps Case Number",v:"If related to the issue, provide the MOps case number",t:"fill"},
+{n:"Impacted Benefits",v:"Specify whether medical, dental, and/or vision benefits are impacted. If all three, select 'medical' under the carrier but mention each in the description",t:"fill"},
+{n:"Detailed Issue Description",v:"Provide a clear and detailed summary of the issue",t:"fill"},
+{n:"Relevant Documents",v:"Attach any relevant employer/employee-provided documents e.g. carrier invoices or letters",t:"fill"},
+{n:"Research Summary",v:"Summarize research done to confirm the error, including links to open/closed MOps or Engagement cases, relevant IKB articles, or Confluence pages",t:"fill"},
+{n:"Employer-Identified Discrepancy",v:"Describe any discrepancies noted by the employer that need resolution",t:"fill"}
+];
+
+const BENS_EQ_PRE={lbl:"Required before creating this ticket",body:"Have you confirmed through BenHelp that a ticket is required? List the Slack thread URL where guidance was given before proceeding."};
+
+const COBRA_TPL=BENS_EQ_TPL;
+const COBRA_PRE=BENS_EQ_PRE;
+
+const BYB_TPL=[
+{n:"Have you confirmed through BenHelp that a ticket is required?",v:"List the Slack thread URL where guidance was given",t:"fill"},
+{n:"Group Name",v:"",t:"fill"},
+{n:"Group Hippo Link",v:"",t:"fill"},
+{n:"Who surfaced the issue",v:"Admin or broker",t:"fill"},
+{n:"Employee Hippo Link (if applicable)",v:"",t:"fill"},
+{n:"Situation/context",v:"",t:"fill"},
+{n:"Proposed (or attempted) solution",v:"",t:"fill"},
+{n:"What is needed from BYB?",v:"",t:"fill"},
+{n:"Case Number",v:"",t:"fill"}
+];
+
+const BYB_PRE={lbl:"Required before creating this ticket",body:"Have you confirmed through BenHelp that a ticket is required? List the Slack thread URL where guidance was given before proceeding."};
+
+const BOR_TPL=[
+{n:"Group Name",v:"",t:"fill"},
+{n:"BOR Away Effective Date (all lines of coverage)",v:"",t:"fill"},
+{n:"Is the company interested in BYB?",v:"",t:"fill"},
+{n:"Impacted Carriers",v:"",t:"fill"},
+{n:"Instructions for TAdAs and BASIC Pacific COBRA (if applicable)",v:"",t:"fill"},
+{n:"Company Hippo Link",v:"",t:"fill"},
+{n:"Description and Timeline of Events (including case numbers)",v:"",t:"fill"},
+{n:"Please attach invoices received (if any)",v:"",t:"fill"}
+];
+
+const MYBC_TPL=[
+{n:"Description",v:"Provide detailed information so the team can determine if the change qualifies as a mid-year change AND is something the group is able to accomplish with their specific carrier/state",t:"fill"},
+{n:"The carrier(s)",v:"",t:"fill"},
+{n:"The line(s) of coverage",v:"",t:"fill"},
+{n:"Who the error is affecting (employee, dependent, etc.) if applicable",v:"",t:"fill"},
+{n:"The effective date(s)",v:"",t:"fill"},
+{n:"The ask or action item for MYBC (include group name, employee name(s), relevant links, case numbers, issue(s))",v:"",t:"fill"},
+{n:"What specific change is the employer requesting (carrier, contribution amount, etc.)",v:"",t:"fill"},
+{n:"Link any important documents or screenshots related to the issue",v:"",t:"fill"}
+];
+
 const N={
 start:{d:1,t:5,lbl:"Step 1 of 5",q:"Is this a group-level issue or a member-level issue?",opts:[
 {txt:"Group-level issue (affects the whole company — plans, rates, waiting periods, contribution schemes, group terminations, demographics)",nxt:"group_byb"},
@@ -295,1183 +345,337 @@ ewcd_case:{d:5,t:5,lbl:"Step 5 of 5",q:"What is the status of the related MOps c
 
 const R={
 r_byb_impl:{type:"byb",tag:"BYB ticket — implementation error",title:"Create a BYB Implementation Error ticket",body:"Route to Benefits BYB. Yellow BYB pill must be present. Select the detail that matches the specific error.",
-pre:null,
-tpl:[
-{n:"Ticket Reason",v:"BYB Implementation Error",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Select: Incorrect rates | Incorrect plans | Contribution scheme error | Missing TAdA | Missed employee enrollment | Missed dependent enrollment | Incorrect employee termination | Missed employee termination | Incorrect employee enrollment (plan/demographic info)",t:"sel"},
-{n:"Owner",v:"Benefits BYB",t:"fixed"},
-{n:"Template",v:"BYB Template",t:"fixed"}
-],note:null},
+pre:BYB_PRE,
+tpl:[{n:"Ticket Reason",v:"BYB Implementation Error",t:"fixed"},{n:"Ticket Reason Detail",v:"Select: Incorrect rates | Incorrect plans | Contribution scheme error | Missing TAdA | Missed employee enrollment | Missed dependent enrollment | Incorrect employee termination | Missed employee termination | Incorrect employee enrollment (plan/demographic info)",t:"sel"},{n:"Owner",v:"Benefits BYB",t:"fixed"},...BYB_TPL.slice(1)],note:null},
 
 r_byb_change:{type:"byb",tag:"BYB ticket — change request",title:"Create a BYB Change Request ticket",body:"Use when the group changed something directly with the carrier and Hippo needs to reflect it. Yellow BYB pill must be present.",
-tpl:[
-{n:"Ticket Reason",v:"BYB Change Request",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Select: Contribution scheme change | Waiting period change | Additional line of coverage | Plan removal | Rate change | Group Termination | BYB BOR Change",t:"sel"},
-{n:"Owner",v:"Benefits BYB",t:"fixed"},
-{n:"Template",v:"BYB Template",t:"fixed"}
-],note:null},
+pre:BYB_PRE,
+tpl:[{n:"Ticket Reason",v:"BYB Change Request",t:"fixed"},{n:"Ticket Reason Detail",v:"Select: Contribution scheme change | Waiting period change | Additional line of coverage | Plan removal | Rate change | Group Termination | BYB BOR Change",t:"sel"},{n:"Owner",v:"Benefits BYB",t:"fixed"},...BYB_TPL.slice(1)],note:null},
 
 r_byb_update:{type:"byb",tag:"BYB ticket — employer update",title:"Create a BYB Employer Requesting Update ticket",body:"Use when admin needs a general update and you cannot obtain the information yourself. Yellow BYB pill must be present.",
-tpl:[
-{n:"Ticket Reason",v:"BYB Employer Requesting Update",t:"fixed"},
-{n:"Ticket Reason Detail",v:"N/A",t:"fixed"},
-{n:"Owner",v:"Benefits BYB",t:"fixed"},
-{n:"Template",v:"BYB Template",t:"fixed"}
-],note:null},
+pre:BYB_PRE,
+tpl:[{n:"Ticket Reason",v:"BYB Employer Requesting Update",t:"fixed"},{n:"Ticket Reason Detail",v:"N/A",t:"fixed"},{n:"Owner",v:"Benefits BYB",t:"fixed"},...BYB_TPL.slice(1)],note:null},
 
 r_byb_q:{type:"byb",tag:"BYB ticket — information needed",title:"Create a BYB Information/Clarity Needed ticket",body:"Use only after all resources are exhausted. Yellow BYB pill must be present.",
-tpl:[
-{n:"Ticket Reason",v:"BYB Information/Clarity Needed",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Select: Question from ER | Question from broker | Question from Gustie",t:"sel"},
-{n:"Owner",v:"Benefits BYB",t:"fixed"},
-{n:"Template",v:"BYB Template",t:"fixed"}
-],note:null},
+pre:BYB_PRE,
+tpl:[{n:"Ticket Reason",v:"BYB Information/Clarity Needed",t:"fixed"},{n:"Ticket Reason Detail",v:"Select: Question from ER | Question from broker | Question from Gustie",t:"sel"},{n:"Owner",v:"Benefits BYB",t:"fixed"},...BYB_TPL.slice(1)],note:null},
 
 r_byb_mem_impl:{type:"byb",tag:"BYB ticket — member implementation error",title:"Create a BYB Implementation Error ticket (member level)",body:"For BYB groups where an EE's enrollment, termination, or demographic info was processed incorrectly. Yellow BYB pill must be present.",
-tpl:[
-{n:"Ticket Reason",v:"BYB Implementation Error",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Select: Missed employee enrollment | Missed dependent enrollment | Incorrect employee termination | Missed employee termination | Missed dependent termination | Incorrect employee enrollment (plan/demographic info)",t:"sel"},
-{n:"Owner",v:"Member Ops - BYB",t:"fixed"},
-{n:"Template",v:"BYB Template",t:"fixed"}
-],note:null},
+pre:BYB_PRE,
+tpl:[{n:"Ticket Reason",v:"BYB Implementation Error",t:"fixed"},{n:"Ticket Reason Detail",v:"Select: Missed employee enrollment | Missed dependent enrollment | Incorrect employee termination | Missed employee termination | Missed dependent termination | Incorrect employee enrollment (plan/demographic info)",t:"sel"},{n:"Owner",v:"Member Ops - BYB",t:"fixed"},...BYB_TPL.slice(1)],note:null},
 
 r_byb_mem_change:{type:"byb",tag:"BYB ticket — change in enrollment",title:"Create a BYB Change Request — Change in Enrollment ticket",body:"Use when EE's NHE, OE, or QLE needs to be unlocked and updated, or coverage was updated with carrier and needs to reflect in Hippo. Yellow BYB pill must be present.",
-tpl:[
-{n:"Ticket Reason",v:"BYB Change Request",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Change in enrollment",t:"fixed"},
-{n:"Owner",v:"Member Ops - BYB",t:"fixed"},
-{n:"Template",v:"BYB Template",t:"fixed"}
-],note:null},
+pre:BYB_PRE,
+tpl:[{n:"Ticket Reason",v:"BYB Change Request",t:"fixed"},{n:"Ticket Reason Detail",v:"Change in enrollment",t:"fixed"},{n:"Owner",v:"Member Ops - BYB",t:"fixed"},...BYB_TPL.slice(1)],note:null},
 
 r_byb_mem_exp:{type:"byb",tag:"BYB ticket — expedite enrollment",title:"Create a BYB Expedite Enrollment ticket",body:"Use when EE/ER is requesting an expedited enrollment for NHE, OE, or QLE. Typically reserved for ATC situations. Yellow BYB pill must be present.",
-tpl:[
-{n:"Ticket Reason",v:"BYB Expedite Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"N/A",t:"fixed"},
-{n:"Owner",v:"Member Ops - BYB",t:"fixed"},
-{n:"Template",v:"BYB Template",t:"fixed"}
-],note:null},
+pre:BYB_PRE,
+tpl:[{n:"Ticket Reason",v:"BYB Expedite Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"N/A",t:"fixed"},{n:"Owner",v:"Member Ops - BYB",t:"fixed"},...BYB_TPL.slice(1)],note:null},
 
-r_oowner:{type:"oowner",tag:"No ticket — tag Advisor/OA",title:"Tag the Advisor or Opportunity Owner in the Opportunity",body:"No ticket needed. During an active New Plan or Renewal, last-minute group-level changes go to the Opportunity Owner or OA directly via the Opportunity.",
-tpl:null,note:null},
+r_oowner:{type:"oowner",tag:"No ticket — tag Advisor/OA",title:"Tag the Advisor or Opportunity Owner in the Opportunity",body:"No ticket needed. During an active New Plan or Renewal, last-minute group-level changes go to the Opportunity Owner or OA directly via the Opportunity.",tpl:null,note:null},
 
-r_oa:{type:"oowner",tag:"No ticket — tag OA in Benefit Order",title:"Tag the OA in the active Benefit or Carrier Order",body:"No ticket needed. For OE elections, changes, or urgent updates during an active New Plan/Renewal, reach out to the assigned OA of the in-progress Benefit Order. If NHE aligns with OE, also reach out to the OA.",
-tpl:null,note:null},
+r_oa:{type:"oowner",tag:"No ticket — tag OA in Benefit Order",title:"Tag the OA in the active Benefit or Carrier Order",body:"No ticket needed. For OE elections, changes, or urgent updates during an active New Plan/Renewal, reach out to the assigned OA of the in-progress Benefit Order.",tpl:null,note:null},
 
-r_oa_oppty:{type:"oowner",tag:"No ticket — tag Opportunity Owner/OA",title:"Tag the Opportunity Owner or OA in the Opportunity",body:"If an EE or ER catches an incorrect enrollment before the Benefit Order is fulfilled, reach out to the Opportunity Owner or OA — no ticket needed.",
-tpl:null,note:null},
+r_oa_oppty:{type:"oowner",tag:"No ticket — tag Opportunity Owner/OA",title:"Tag the Opportunity Owner or OA in the Opportunity",body:"If an EE or ER catches an incorrect enrollment before the Benefit Order is fulfilled, reach out to the Opportunity Owner or OA — no ticket needed.",tpl:null,note:null},
 
-r_eng_transfer:{type:"engagement",tag:"Engagement case",title:"Create an Engagement Case — EE Transfer to Affiliate",body:"Use when an ER wants to transfer an active, FT-eligible EE to a parent or sister company under an umbrella policy during a New Plan/Renewal. No ticket to Benefits Services.",
-tpl:null,note:null},
+r_eng_transfer:{type:"engagement",tag:"Engagement case",title:"Create an Engagement Case — EE Transfer to Affiliate",body:"Use when an ER wants to transfer an active, FT-eligible EE to a parent or sister company under an umbrella policy during a New Plan/Renewal. No ticket to Benefits Services.",tpl:null,note:null},
 
 r_bor_group:{type:"ticket",tag:"Ticket required — Benefits Transfers",title:"Create an MYBC ticket to Benefits Transfers",body:"Route to Benefit Transfers team for BOR group-level corrections. Select the appropriate ticket reason detail.",
-tpl:[
-{n:"Ticket Reason",v:"Corrective Action Needed",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Select: Contribution Scheme | Gusto not listed as broker on file | Incorrect Termination Policy | Plan Discrepancy | Rate Discrepancy | Status update/ER Communication | TAdA Question | Waiting Period",t:"sel"},
-{n:"Owner",v:"Benefit Transfers",t:"fixed"},
-{n:"Template",v:"MYBC Template (BOR Template for status update)",t:"fixed"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Corrective Action Needed",t:"fixed"},{n:"Ticket Reason Detail",v:"Select: Contribution Scheme | Gusto not listed as broker on file | Incorrect Termination Policy | Plan Discrepancy | Rate Discrepancy | Status update/ER Communication | TAdA Question | Waiting Period",t:"sel"},{n:"Owner",v:"Benefit Transfers",t:"fixed"},...BOR_TPL],note:null},
 
 r_advising:{type:"ticket",tag:"Ticket required — Advising Fulfillment",title:"Create an MYBC ticket to Advising Fulfillment",body:"Route to Advising Fulfillment for mid-year changes. Only use Ancillary Upsell if the ER has already started the process in-app. Mid-year WP or contribution changes are not supported unless there is a confirmed Gusto error.",
-tpl:[
-{n:"Ticket Reason",v:"Select: Ancillary Upsell - Advising Required | Customer Change Request | Mid-Year Add Medical | Mid-Year Replace Ancillary | Mid-year Replace Medical | Alignment",t:"sel"},
-{n:"Ticket Reason Detail",v:"Select: Dental/Vision | Life Insurance | STD/LTD | Carrier Change Request | Rider Request | Out-of-state Employee | Other",t:"sel"},
-{n:"Owner",v:"Advising Fulfillment",t:"fixed"},
-{n:"Template",v:"MYBC Template",t:"fixed"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Select: Ancillary Upsell - Advising Required | Customer Change Request | Mid-Year Add Medical | Mid-Year Replace Ancillary | Mid-year Replace Medical | Alignment",t:"sel"},{n:"Ticket Reason Detail",v:"Select: Dental/Vision | Life Insurance | STD/LTD | Carrier Change Request | Rider Request | Out-of-state Employee | Other",t:"sel"},{n:"Owner",v:"Advising Fulfillment",t:"fixed"},...MYBC_TPL],note:null},
 
 r_glwdp:{type:"eq",tag:"EQ ticket — Waiting Period Discrepancy",title:"Create an EQ ticket — Waiting Period Discrepancy",body:"Use when the WP in Hippo doesn't match what the carrier has on file. If within 60 days of policy effective date and confirmed Gusto error, use Advising Fulfillment Rider Request instead.",
-tpl:[
-{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Waiting Period Discrepancy",t:"fixed"},
-{n:"Shortcut",v:";glwdp",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"Carrier",v:"",t:"fill"},
-{n:"Hippo Waiting Period",v:"",t:"fill"},
-{n:"Correct Waiting Period",v:"",t:"fill"},
-{n:"Valid Proof in GDrive",v:"Select: Yes | No | N/A - Engagement",t:"sel"},
-{n:"Gusto / Carrier Error Reason",v:"Select: Submitted incorrectly during OE | Not submitted during OE | Change unconfirmed during OE | Carrier failed to process",t:"sel"},
-{n:"Company Hippo Link",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Waiting Period Discrepancy",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"Carrier",v:"",t:"fill"},{n:"Hippo Waiting Period",v:"",t:"fill"},{n:"Correct Waiting Period",v:"",t:"fill"},{n:"Valid Proof in GDrive",v:"Select: Yes | No | N/A - Engagement",t:"sel"},{n:"Gusto / Carrier Error Reason",v:"Select: Submitted incorrectly during OE | Not submitted during OE | Change unconfirmed during OE | Carrier failed to process",t:"sel"},{n:"Company Hippo Link",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
-r_wp_nochange:{type:"warning",tag:"No ticket — advise admin",title:"Inform admin — mid-year WP change not permitted",body:"Groups are not allowed to make waiting period changes mid-policy year unless there is a confirmed Gusto error flagged within 60 days. Inform the admin the change must wait until next renewal. Create an Engagement Case to document the communication if needed.",
-tpl:null,note:null},
+r_wp_nochange:{type:"warning",tag:"No ticket — advise admin",title:"Inform admin — mid-year WP change not permitted",body:"Groups are not allowed to make waiting period changes mid-policy year unless there is a confirmed Gusto error flagged within 60 days. Inform the admin the change must wait until next renewal. Create an Engagement Case to document the communication if needed.",tpl:null,note:null},
 
 r_glcsd:{type:"eq",tag:"EQ ticket — Contribution Scheme",title:"Create an EQ ticket — Contribution Scheme Discrepancy or Change",body:"Owner is always Escalations and Quality (EQ).",
-tpl:[
-{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Contribution Scheme Discrepancy or Change",t:"fixed"},
-{n:"Shortcut",v:";glcsd",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"Open Enrollment Date",v:"",t:"fill"},
-{n:"How many EEs Impacted",v:"Select: 0-1 | 2-5 | 6-10+ | All",t:"sel"},
-{n:"Plan Names Impacted",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Contribution Scheme Discrepancy or Change",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"Open Enrollment Date",v:"",t:"fill"},{n:"How many EEs Impacted",v:"Select: 0-1 | 2-5 | 6-10+ | All",t:"sel"},{n:"Plan Names Impacted",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"}],note:null},
 
 r_gdc:{type:"eq",tag:"EQ ticket — Group Demographic Change",title:"Create an EQ ticket — Group Demographic Change",body:"Use for company name, email, filing/mailing address, or phone number changes.",
-tpl:[
-{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Group Demographic Change",t:"fixed"},
-{n:"Shortcut",v:";gdc",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"Demographic Change Needed",v:"Select: Company Name | Email | Filing Address | Mailing Address | Phone",t:"sel"},
-{n:"Previous Demo Info",v:"",t:"fill"},
-{n:"New Demo Info",v:"",t:"fill"},
-{n:"Carrier",v:"",t:"fill"},
-{n:"Company Hippo Link",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Group Demographic Change",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"Demographic Change Needed",v:"Select: Company Name | Email | Filing Address | Mailing Address | Phone",t:"sel"},{n:"Previous Demo Info",v:"",t:"fill"},{n:"New Demo Info",v:"",t:"fill"},{n:"Carrier",v:"",t:"fill"},{n:"Company Hippo Link",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_glcb:{type:"eq",tag:"EQ ticket — Change of BPOA/Admin",title:"Complete required steps first, then create an EQ ticket",body:"To update the Benefits Power of Attorney (BPOA), a signed letter on company letterhead is required before EQ can action the ticket.",
-pre:{lbl:"Required steps before creating this ticket",body:`1. Review the IKB article: <a href="https://support.gusto.com/article/internal/240416175224493/Access-or-change-a-company-s-benefits-e-signature-authorization-form" target="_blank">Access or change a company's benefits e-signature authorization form</a><br>2. Obtain signed company letterhead confirming the change. Must be signed by the group owner (or authorized signatory) AND the new BPOA. If new BPOA is the Owner/CEO, only their signature is needed.<br>3. Letter must include the new admin's name, address, phone number, and email.<br>4. Resources: <a href="https://docs.google.com/document/d/1ilZONo9FYMmS_lKSA6IacCsHB4y4v55x5mvuwvr7rJk/edit?tab=t.0" target="_blank">Example Letter Template</a> | <a href="https://docs.google.com/presentation/d/1C9Zy7UPYGJk06e_BKNs8LsBoJT2orlnO8znjxvgoKA4/edit" target="_blank">EQ Deck</a>`},
-tpl:[
-{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Change of BPOA / Admin",t:"fixed"},
-{n:"Shortcut",v:";glcb",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"Hippo Benefits Admin",v:"",t:"fill"},
-{n:"New Benefit Admin",v:"",t:"fill"},
-{n:"Carrier",v:"",t:"fill"},
-{n:"Company Hippo Link",v:"",t:"fill"},
-{n:"Additional Details",v:"",t:"fill"}
-],note:null},
+pre:{lbl:"Required steps before creating this ticket",body:`1. Review the IKB article: <a href="https://support.gusto.com/article/internal/240416175224493/Access-or-change-a-company-s-benefits-e-signature-authorization-form" target="_blank">Access or change a company's benefits e-signature authorization form</a><br>2. Obtain signed company letterhead. Must be signed by the group owner AND the new BPOA. If new BPOA is the Owner/CEO, only their signature is needed.<br>3. Letter must include the new admin's name, address, phone number, and email.<br>4. Resources: <a href="https://docs.google.com/document/d/1ilZONo9FYMmS_lKSA6IacCsHB4y4v55x5mvuwvr7rJk/edit?tab=t.0" target="_blank">Example Letter Template</a> | <a href="https://docs.google.com/presentation/d/1C9Zy7UPYGJk06e_BKNs8LsBoJT2orlnO8znjxvgoKA4/edit" target="_blank">EQ Deck</a>`},
+tpl:[{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Change of BPOA / Admin",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"Hippo Benefits Admin",v:"",t:"fill"},{n:"New Benefit Admin",v:"",t:"fill"},{n:"Carrier",v:"",t:"fill"},{n:"Company Hippo Link",v:"",t:"fill"},{n:"Additional Details",v:"",t:"fill"}],note:null},
 
-r_glgrpd:{type:"eq",tag:"EQ ticket — Rate or Premium Discrepancy",title:"Create an EQ ticket — Group Rate or Premium Discrepancy",body:"Always confirm monthly premium totals between Hippo and invoices before creating the ticket. Include affected EEs, invoice amounts vs Hippo amounts, and relevant details.",
-tpl:[
-{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Group Rate or Premium Discrepancy",t:"fixed"},
-{n:"Shortcut",v:";glgrpd",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"Open Enrollment Date",v:"",t:"fill"},
-{n:"How many EEs Impacted",v:"Select: 0-1 | 2-5 | 6-10+ | All",t:"sel"},
-{n:"Plan Names Impacted",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+r_glgrpd:{type:"eq",tag:"EQ ticket — Rate or Premium Discrepancy",title:"Create an EQ ticket — Group Rate or Premium Discrepancy",body:"Always confirm monthly premium totals between Hippo and invoices before creating the ticket.",
+tpl:[{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Group Rate or Premium Discrepancy",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"Open Enrollment Date",v:"",t:"fill"},{n:"How many EEs Impacted",v:"Select: 0-1 | 2-5 | 6-10+ | All",t:"sel"},{n:"Plan Names Impacted",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
-r_glpm:{type:"eq",tag:"EQ ticket — Plan Mismatch",title:"Create an EQ ticket — Plan Mismatch",body:"Use when group plans don't match between Hippo and the carrier. Can happen during onboarding, renewals, or when participation drops below a threshold.",
-tpl:[
-{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Plan Mismatch",t:"fixed"},
-{n:"Shortcut",v:";glpm",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"Line(s) of coverage impacted",v:"",t:"fill"},
-{n:"Renewal effective date",v:"",t:"fill"},
-{n:"Specific plan name(s) impacted",v:"",t:"fill"},
-{n:"G Drive link with submission/confirmation",v:"",t:"fill"},
-{n:"Summary of issue",v:"",t:"fill"},
-{n:"Action needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+r_glpm:{type:"eq",tag:"EQ ticket — Plan Mismatch",title:"Create an EQ ticket — Plan Mismatch",body:"Use when group plans don't match between Hippo and the carrier.",
+tpl:[{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Plan Mismatch",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"Line(s) of coverage impacted",v:"",t:"fill"},{n:"Renewal effective date",v:"",t:"fill"},{n:"Specific plan name(s) impacted",v:"",t:"fill"},{n:"G Drive link with submission/confirmation",v:"",t:"fill"},{n:"Summary of issue",v:"",t:"fill"},{n:"Action needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_gltpd:{type:"eq",tag:"EQ ticket — Termination Policy Discrepancy",title:"Create an EQ ticket — Termination Policy Discrepancy",body:"Use when the Termination Policy in Hippo doesn't match what the carrier has on file.",
-tpl:[
-{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Termination Policy Discrepancy",t:"fixed"},
-{n:"Shortcut",v:";gltpd",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"Carrier",v:"",t:"fill"},
-{n:"Hippo Termination Policy",v:"",t:"fill"},
-{n:"Correct Termination Policy",v:"",t:"fill"},
-{n:"Valid Proof in GDrive",v:"Select: Yes | No | N/A - Engagement",t:"sel"},
-{n:"Gusto / Carrier Error Reason",v:"Select: Submitted incorrectly during OE | Not submitted during OE | Change unconfirmed during OE | Carrier failed to process",t:"sel"},
-{n:"Company Hippo Link",v:"",t:"fill"},
-{n:"Additional Details",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Termination Policy Discrepancy",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"Carrier",v:"",t:"fill"},{n:"Hippo Termination Policy",v:"",t:"fill"},{n:"Correct Termination Policy",v:"",t:"fill"},{n:"Valid Proof in GDrive",v:"Select: Yes | No | N/A - Engagement",t:"sel"},{n:"Gusto / Carrier Error Reason",v:"Select: Submitted incorrectly during OE | Not submitted during OE | Change unconfirmed during OE | Carrier failed to process",t:"sel"},{n:"Company Hippo Link",v:"",t:"fill"},{n:"Additional Details",v:"",t:"fill"}],note:null},
 
-r_glmgt:{type:"eq",tag:"EQ ticket or tag OA — Missed Group Termination",title:"Check Benefit Order status first",body:"If the Benefit Order was JUST fulfilled: tag the group submission OA to coordinate with the carrier for confirmation. See the <a href='https://support.gusto.com/article/220121122651000/Working-with-Onboarding-Advocates-OAs-before-or-during-benefits-fulfillment' target='_blank' style='color:#791F1F'>IKB article on flagging OAs for active benefit orders</a>. If post-fulfillment and missed during renewals due to carrier switches: create an EQ ticket.",
-tpl:[
-{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Missed Group Termination",t:"fixed"},
-{n:"Shortcut",v:";glmgt",t:"fixed"},
-{n:"Owner",v:"Select: Escalations and Quality (EQ) — if missed during renewals | Member Ops - Group Terminations — if missed during onboarding/OE process",t:"sel"},
-{n:"Terminated Carrier",v:"",t:"fill"},
-{n:"Termination Date",v:"",t:"fill"},
-{n:"Related Case/Ticket",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+r_glmgt:{type:"eq",tag:"EQ ticket or tag OA — Missed Group Termination",title:"Check Benefit Order status first",body:"If the Benefit Order was just fulfilled: tag the group submission OA to coordinate with the carrier. See the <a href='https://support.gusto.com/article/220121122651000/Working-with-Onboarding-Advocates-OAs-before-or-during-benefits-fulfillment' target='_blank' style='color:#791F1F'>IKB article on flagging OAs for active benefit orders</a>. If post-fulfillment and missed during renewals: create an EQ ticket.",
+tpl:[{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Missed Group Termination",t:"fixed"},{n:"Owner",v:"Select: Escalations and Quality (EQ) — if missed during renewals | Member Ops - Group Terminations — if missed during onboarding/OE",t:"sel"},{n:"Terminated Carrier",v:"",t:"fill"},{n:"Termination Date",v:"",t:"fill"},{n:"Related Case/Ticket",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
-r_gtvmt:{type:"ticket",tag:"Ticket required — Group Terminations",title:"Create a ticket — Group Termination Voluntary",body:"Guide admin to submit through the in-app flow first. If the in-app flow does not work properly, create this ticket. Engagement handles all customer communications. Member Ops handles carrier procedures and Hippo.",
-tpl:[
-{n:"Ticket Record Type",v:"Member Operations",t:"fixed"},
-{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Select: Group Termination - Voluntary (employer initiated cancellation in-app or having issues) | Group Termination - Missed Group Termination (missed due to Gusto error)",t:"sel"},
-{n:"Shortcut",v:";gtvmt",t:"fixed"},
-{n:"Owner",v:"Member Ops - Group Terminations",t:"fixed"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Company Hippo Link",v:"",t:"fill"},
-{n:"Requested Termination Effective Date (all lines of coverage)",v:"",t:"fill"},
-{n:"All Impacted Carriers",v:"",t:"fill"},
-{n:"Associated termination case number",v:"",t:"fill"},
-{n:"Case number with ER's original request",v:"",t:"fill"},
-{n:"Description and Timeline of events",v:"",t:"fill"},
-{n:"Instructions for TAdAs and Elevate COBRA (if applicable)",v:"",t:"fill"},
-{n:"Please attach invoices received (if any)",v:"",t:"fill"}
-],note:null},
+r_gtvmt:{type:"ticket",tag:"Ticket required — Group Terminations",title:"Create a ticket — Group Termination Voluntary",body:"Guide admin to submit through the in-app flow first. If the in-app flow does not work, create this ticket. Engagement handles all customer communications.",
+tpl:[{n:"Ticket Record Type",v:"Member Operations",t:"fixed"},{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Select: Group Termination - Voluntary (employer initiated in-app or having issues) | Group Termination - Missed Group Termination (missed due to Gusto error)",t:"sel"},{n:"Owner",v:"Member Ops - Group Terminations",t:"fixed"},{n:"Group Name",v:"",t:"fill"},{n:"Company Hippo Link",v:"",t:"fill"},{n:"Requested Termination Effective Date (all lines of coverage)",v:"",t:"fill"},{n:"All Impacted Carriers",v:"",t:"fill"},{n:"Associated termination case number",v:"",t:"fill"},{n:"Case number with ER's original request",v:"",t:"fill"},{n:"Description and Timeline of events",v:"",t:"fill"},{n:"Instructions for TAdAs and Elevate COBRA (if applicable)",v:"",t:"fill"},{n:"Please attach invoices received (if any)",v:"",t:"fill"}],note:null},
 
-r_gtnpt:{type:"ticket",tag:"Ticket required — Group Terminations",title:"Create a ticket — Group Termination Non-Payment",body:"Use when the group was terminated by the carriers due to non-payment. Engagement handles all customer communications. Member Ops handles carrier procedures and Hippo.",
-tpl:[
-{n:"Ticket Record Type",v:"Member Operations",t:"fixed"},
-{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Group Termination - Non-Payment",t:"fixed"},
-{n:"Shortcut",v:";gtnpt",t:"fixed"},
-{n:"Owner",v:"Member Ops - Group Terminations",t:"fixed"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Company Hippo Link",v:"",t:"fill"},
-{n:"Does this group need to be escalated to NPS?",v:"Select: Yes | No",t:"sel"},
-{n:"Carrier Termination Date (all lines of coverage)",v:"",t:"fill"},
-{n:"All Impacted Carriers",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Related Ticket(s)",v:"",t:"fill"},
-{n:"Description and Timeline of events",v:"",t:"fill"},
-{n:"Instructions for ancillary TAdAs and Elevate COBRA (if applicable)",v:"",t:"fill"},
-{n:"Please attach invoices received (if any)",v:"",t:"fill"}
-],note:null},
+r_gtnpt:{type:"ticket",tag:"Ticket required — Group Terminations",title:"Create a ticket — Group Termination Non-Payment",body:"Use when the group was terminated by the carriers due to non-payment. Engagement handles all customer communications.",
+tpl:[{n:"Ticket Record Type",v:"Member Operations",t:"fixed"},{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Group Termination - Non-Payment",t:"fixed"},{n:"Owner",v:"Member Ops - Group Terminations",t:"fixed"},{n:"Group Name",v:"",t:"fill"},{n:"Company Hippo Link",v:"",t:"fill"},{n:"Does this group need to be escalated to NPS?",v:"Select: Yes | No",t:"sel"},{n:"Carrier Termination Date (all lines of coverage)",v:"",t:"fill"},{n:"All Impacted Carriers",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Related Ticket(s)",v:"",t:"fill"},{n:"Description and Timeline of events",v:"",t:"fill"},{n:"Instructions for ancillary TAdAs and Elevate COBRA (if applicable)",v:"",t:"fill"},{n:"Please attach invoices received (if any)",v:"",t:"fill"}],note:null},
 
-r_gtret:{type:"ticket",tag:"Ticket required — Group Terminations",title:"Create a ticket — Group Termination Rogue ER",body:"ER must confirm termination is accurate in writing or be deemed unresponsive to requests. Engagement handles all customer communications.",
-tpl:[
-{n:"Ticket Record Type",v:"Member Operations",t:"fixed"},
-{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Group Termination - Rogue ER",t:"fixed"},
-{n:"Shortcut",v:";gtret",t:"fixed"},
-{n:"Owner",v:"Member Ops - Group Terminations",t:"fixed"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Company Hippo Link",v:"",t:"fill"},
-{n:"Termination effective date (all lines of coverage)",v:"",t:"fill"},
-{n:"All Impacted Carriers",v:"",t:"fill"},
-{n:"If Medical Only — what does the ER want to do with Ancillary benefits",v:"Select: Remain Active w/ Ancillary Carrier and Suspend w/ Gusto | Remain Active w/ Ancillary Carrier and Gusto - Sign up for new Medical | Terminate w/ Ancillary Carrier",t:"sel"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Associated Customer Comms Case Number",v:"",t:"fill"},
-{n:"Related Ticket(s)",v:"",t:"fill"},
-{n:"Description and Timeline of events",v:"",t:"fill"},
-{n:"Instructions for TAdAs and Elevate COBRA (if applicable)",v:"",t:"fill"},
-{n:"Please attach invoices received (if any)",v:"",t:"fill"}
-],note:null},
+r_gtret:{type:"ticket",tag:"Ticket required — Group Terminations",title:"Create a ticket — Group Termination Rogue ER",body:"ER must confirm termination is accurate in writing or be deemed unresponsive. Engagement handles all customer communications.",
+tpl:[{n:"Ticket Record Type",v:"Member Operations",t:"fixed"},{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Group Termination - Rogue ER",t:"fixed"},{n:"Owner",v:"Member Ops - Group Terminations",t:"fixed"},{n:"Group Name",v:"",t:"fill"},{n:"Company Hippo Link",v:"",t:"fill"},{n:"Termination effective date (all lines of coverage)",v:"",t:"fill"},{n:"All Impacted Carriers",v:"",t:"fill"},{n:"If Medical Only — what does the ER want to do with Ancillary benefits",v:"Select: Remain Active w/ Ancillary Carrier and Suspend w/ Gusto | Remain Active w/ Ancillary Carrier and Gusto - Sign up for new Medical | Terminate w/ Ancillary Carrier",t:"sel"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Associated Customer Comms Case Number",v:"",t:"fill"},{n:"Related Ticket(s)",v:"",t:"fill"},{n:"Description and Timeline of events",v:"",t:"fill"},{n:"Instructions for TAdAs and Elevate COBRA (if applicable)",v:"",t:"fill"},{n:"Please attach invoices received (if any)",v:"",t:"fill"}],note:null},
 
 r_gtbt:{type:"ticket",tag:"Ticket required — Group Terminations",title:"Create a ticket — Group Termination BOR",body:"Use to request the group's Hippo be terminated when the company moved benefit policies to a new broker. Engagement handles all customer communications.",
-tpl:[
-{n:"Ticket Record Type",v:"Member Operations",t:"fixed"},
-{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Group Termination - BOR",t:"fixed"},
-{n:"Shortcut",v:";gtbt",t:"fixed"},
-{n:"Owner",v:"Member Ops - Group Terminations",t:"fixed"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Company Hippo Link",v:"",t:"fill"},
-{n:"BOR Effective Date (all lines of coverage)",v:"",t:"fill"},
-{n:"All Impacted Carriers",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Related Ticket(s)",v:"",t:"fill"},
-{n:"Description and Timeline of events",v:"",t:"fill"},
-{n:"Instructions for TAdAs and Elevate COBRA (if applicable)",v:"",t:"fill"},
-{n:"Please attach invoices received (if any)",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Record Type",v:"Member Operations",t:"fixed"},{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Group Termination - BOR",t:"fixed"},{n:"Owner",v:"Member Ops - Group Terminations",t:"fixed"},{n:"Group Name",v:"",t:"fill"},{n:"Company Hippo Link",v:"",t:"fill"},{n:"BOR Effective Date (all lines of coverage)",v:"",t:"fill"},{n:"All Impacted Carriers",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Related Ticket(s)",v:"",t:"fill"},{n:"Description and Timeline of events",v:"",t:"fill"},{n:"Instructions for TAdAs and Elevate COBRA (if applicable)",v:"",t:"fill"},{n:"Please attach invoices received (if any)",v:"",t:"fill"}],note:null},
 
 r_gtcrt:{type:"ticket",tag:"Ticket required — Group Terminations",title:"Create a ticket — Group Termination Change Request",body:"Use to request an update for a group's in-app benefits cancellation request where term cases already exist.",
-tpl:[
-{n:"Ticket Record Type",v:"Member Operations",t:"fixed"},
-{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Group Termination - Change Request",t:"fixed"},
-{n:"Shortcut",v:";gtcrt",t:"fixed"},
-{n:"Owner",v:"Member Ops - Group Terminations",t:"fixed"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Company Hippo Link",v:"",t:"fill"},
-{n:"Group Original Request",v:"",t:"fill"},
-{n:"Changes Group would like to make to request",v:"",t:"fill"},
-{n:"Associated Customer Comms case number",v:"",t:"fill"},
-{n:"Description and Timeline of events",v:"",t:"fill"},
-{n:"Please attach invoices received (if any)",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Record Type",v:"Member Operations",t:"fixed"},{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Group Termination - Change Request",t:"fixed"},{n:"Owner",v:"Member Ops - Group Terminations",t:"fixed"},{n:"Group Name",v:"",t:"fill"},{n:"Company Hippo Link",v:"",t:"fill"},{n:"Group Original Request",v:"",t:"fill"},{n:"Changes Group would like to make to request",v:"",t:"fill"},{n:"Associated Customer Comms case number",v:"",t:"fill"},{n:"Description and Timeline of events",v:"",t:"fill"},{n:"Please attach invoices received (if any)",v:"",t:"fill"}],note:null},
 
 r_tada_group:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — TAdA Group-Level Issue",body:"Use for group-level TAdA escalations post-fulfillment.",
-tpl:[
-{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"TAdA Group-Level Issue",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"Group Level Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"TAdA Group-Level Issue",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},...BENS_EQ_TPL],note:null},
 
-r_engagement_name:{type:"engagement",tag:"Engagement case",title:"Create an Engagement Case — Company Name Change",body:"Use when a company is changing their name and has received IRS approval. Obtain IRS documentation from the admin before creating the case.",
-tpl:null,note:null},
+r_engagement_name:{type:"engagement",tag:"Engagement case",title:"Create an Engagement Case — Company Name Change",body:"Use when a company is changing their name and has received IRS approval. Obtain IRS documentation from the admin before creating the case.",tpl:null,note:null},
 
 r_aofa:{type:"ticket",tag:"Ticket required — Advising Fulfillment",title:"Create an MYBC ticket — Group Moved to New State",body:"Use when the group is changing their main company location to a new state mid-year, or has questions about adding coverage for Hawaii employees. Do NOT use for in-state address changes.",
-tpl:[
-{n:"Ticket Record Type",v:"Advising Fulfillment",t:"fixed"},
-{n:"Ticket Reason",v:"Group Moved to New State",t:"fixed"},
-{n:"Shortcut",v:";aofa",t:"fixed"},
-{n:"Owner",v:"Advising Fulfillment",t:"fixed"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Former Address",v:"",t:"fill"},
-{n:"New Address",v:"",t:"fill"},
-{n:"Open Enrollment Renewal Date",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Record Type",v:"Advising Fulfillment",t:"fixed"},{n:"Ticket Reason",v:"Group Moved to New State",t:"fixed"},{n:"Owner",v:"Advising Fulfillment",t:"fixed"},{n:"Group Name",v:"",t:"fill"},{n:"Former Address",v:"",t:"fill"},{n:"New Address",v:"",t:"fill"},{n:"Open Enrollment Renewal Date",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_advising_q:{type:"ticket",tag:"Ticket required — Advising Fulfillment",title:"Create an MYBC ticket — Advising Question",body:"Use when you need a licensed advisor to assist the admin or answer an admin's concerns/requests.",
-tpl:[
-{n:"Ticket Reason",v:"Employer Requested Contact OR Slack Question",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Other",t:"fixed"},
-{n:"Owner",v:"Advising Fulfillment",t:"fixed"},
-{n:"Template",v:"MYBC Template",t:"fixed"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Employer Requested Contact OR Slack Question",t:"fixed"},{n:"Ticket Reason Detail",v:"Other",t:"fixed"},{n:"Owner",v:"Advising Fulfillment",t:"fixed"},...MYBC_TPL],note:null},
 
 r_cien_nhe_open:{type:"benhelp",tag:"BenHelp Slack — NHE open case",title:"Submit to BenHelp Slack channel",body:"EE's NHE or OE has been unlocked and EE has fully re-submitted elections in-app. Case is in-progress and within 30 days.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Change in Enrollment (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";cien",t:"fixed"},
-{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Change in Enrollment (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
 r_mien_nhe_open:{type:"benhelp",tag:"BenHelp Slack — NHE missed/incorrect open",title:"Submit to BenHelp Slack channel",body:"EE is enrolled in wrong plan or has a missing/extra dependent. MOps NHE case is still in-progress.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Missed/Incorrect Enrollment (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";mien",t:"fixed"},
-{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Missed/Incorrect Enrollment (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
 r_esce_nhe_open:{type:"benhelp",tag:"BenHelp Slack — NHE expedite open",title:"Submit to BenHelp Slack channel",body:"EE/ER requesting confirmation of a non-urgent, non-ATC enrollment. Case is in-progress.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Expedite Submission/Confirmation (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";esce",t:"fixed"},
-{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Expedite Submission/Confirmation (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_ern_nhe_open:{type:"benhelp",tag:"BenHelp Slack — NHE exception open",title:"Submit to BenHelp Slack channel",body:"Signed ER exception request obtained. Case is still in-progress. Important: if Error Origin is Employee Error or Employer Error, do NOT pursue a carrier exception.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Exception Request (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";ern",t:"fixed"},
-{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Error Origin",v:"Select: Gusto Error | Carrier Error — Do NOT pursue exception if Employee Error or Employer Error",t:"sel"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Exception Request (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Error Origin",v:"Select: Gusto Error | Carrier Error — Do NOT pursue exception if Employee Error or Employer Error",t:"sel"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
 r_air_nhe_open:{type:"benhelp",tag:"BenHelp Slack — NHE additional info open",title:"Submit to BenHelp Slack channel",body:"Customer Care obtained requested information for an in-progress NHE MOps case.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Additional Information Received (open MOps case)",t:"fixed"},
-{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Additional Information Received (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},{n:"Template",v:"BenS/EQ Template",t:"fixed"}],note:null},
 
 r_status_nhe_open:{type:"benhelp",tag:"BenHelp Slack — NHE status update open",title:"Submit to BenHelp Slack channel",body:"EE/ER asking for status on an in-progress NHE. Only create if the NHE has a current or past follow-up date. If it has a future follow-up date, inform EE/ER it is still processing — do not create a ticket.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Status Update (open MOps case)",t:"fixed"},
-{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Status Update (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},{n:"Template",v:"BenS/EQ Template",t:"fixed"}],note:null},
 
 r_culen:{type:"ticket",tag:"Ticket required — attempt enrollment unlock first",title:"Try unlocking the enrollment first, then create a ticket if needed",body:"Since this enrollment is past the 30-day window, it can no longer be unlocked for the EE to resubmit. A ticket must be created to attempt processing the customer's request.",
-pre:{lbl:"Step 1 — Check if the enrollment can be unlocked",body:`First check if the enrollment can be unlocked using the <a href="https://support.gusto.com/article/internal/220106115542547/Unlock-an-enrollment" target="_blank">Unlock an Enrollment IKB</a>.<br><br>If you unlock and the EE resubmits: allow <strong>24–48 hours</strong> for a case to generate in Salesforce. To check, search the employee's name or group name in SFDC and review the most recent cases listed under the Cases section. If a case generated — no ticket needed. If no case generated after 24–48 hours — create the ticket below.<br><br>If the enrollment cannot be unlocked: create the ticket below immediately.`},
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Change in Enrollment (closed MOps case)",t:"fixed"},
-{n:"Shortcut",v:";culen / ;cien",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+pre:{lbl:"Step 1 — Check if the enrollment can be unlocked",body:`First check if the enrollment can be unlocked using the <a href="https://support.gusto.com/article/internal/220106115542547/Unlock-an-enrollment" target="_blank">Unlock an Enrollment IKB</a>.<br><br>If you unlock and the EE resubmits: allow <strong>24–48 hours</strong> for a case to generate in Salesforce. Search the employee's name or group name in SFDC and review the most recent cases listed under the Cases section. If a case generated — no ticket needed. If no case generated after 24–48 hours — create the ticket below.<br><br>If the enrollment cannot be unlocked: create the ticket below immediately.`},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Change in Enrollment (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
-r_ulen:{type:"noticket",tag:"No ticket — send unlock guidance to engagement",title:"Send enrollment unlock guidance via Slack",body:"Send the following guidance to the engagement IC so they can unlock the enrollment and have the EE resubmit. After the EE resubmits, allow 24–48 hours for a case to generate in Salesforce. Search the employee's name or group name in SFDC and check under the Cases section for the most recent case generations. If a case generated — no ticket needed, the NHE team will pick it up. If no case generated after 24–48 hours — come back and use the Change in Enrollment (closed MOps) path to create a ticket.",
-tpl:[
-{n:"Slack message to send to engagement IC",v:`You can unlock the enrollment by following this IKB: https://support.gusto.com/article/internal/220106115542547/Unlock-an-enrollment\n\nPlease leave this note in the Notes section in Hippo when unlocking:\nUnlocking enrollment due to _____. See case #__ for more info.\n\nPlease note: If the enrollment is already processed, you will first have to unprocess the subscription before unlocking the enrollment.\n\nReminder: Once they resubmit the changes, check if a case generates to make sure the proper selections are submitted to the NHE team's case queue to be processed/updated. If a case does not generate, you will need to create a NHE ticket.\n\nDon't hesitate to reach out if you have any questions or concerns!`,t:"fixed"}
-],note:"After sending this, allow 24–48 hours. If no case generates in SFDC after that window, return to this tool and select 'Change in enrollment — past 30 days or BO fulfilled' to create a ticket."},
+r_ulen:{type:"noticket",tag:"No ticket — send unlock guidance to engagement",title:"Send enrollment unlock guidance via Slack",body:"Send the following guidance to the engagement IC so they can unlock the enrollment and have the EE resubmit. After the EE resubmits, allow 24–48 hours for a case to generate in Salesforce. Search the employee's name or group name in SFDC and check under the Cases section. If a case generated — no ticket needed. If no case generated after 24–48 hours — return to this tool and use the Change in Enrollment (closed MOps) path to create a ticket.",
+tpl:[{n:"Slack message to send to engagement IC",v:`You can unlock the enrollment by following this IKB: https://support.gusto.com/article/internal/220106115542547/Unlock-an-enrollment\n\nPlease leave this note in the Notes section in Hippo when unlocking:\nUnlocking enrollment due to _____. See case #__ for more info.\n\nPlease note: If the enrollment is already processed, you will first have to unprocess the subscription before unlocking the enrollment.\n\nReminder: Once they resubmit the changes, check if a case generates to make sure the proper selections are submitted to the NHE team's case queue. If a case does not generate, you will need to create a NHE ticket.\n\nDon't hesitate to reach out if you have any questions or concerns!`,t:"fixed"}],note:"After sending this, allow 24–48 hours. If no case generates in SFDC after that window, return to this tool and select 'Change in enrollment — past 30 days or BO fulfilled' to create a ticket."},
 
 r_mien_nhe_closed:{type:"eq",tag:"EQ ticket — NHE missed/incorrect closed",title:"Create an EQ ticket — Missed/Incorrect Enrollment",body:"EE is in wrong plan or has a missing/extra dependent. NHE case is closed.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Missed/Incorrect Enrollment (closed MOps case)",t:"fixed"},
-{n:"Shortcut",v:";mien",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Missed/Incorrect Enrollment (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_esce_nhe_closed:{type:"eq",tag:"EQ ticket — NHE expedite closed",title:"Create an EQ ticket — Expedite Submission/Confirmation",body:"Non-urgent, non-ATC enrollment confirmation. Case is closed.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Expedite Submission/Confirmation (closed MOps case)",t:"fixed"},
-{n:"Shortcut",v:";esce",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Expedite Submission/Confirmation (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_ern_nhe_closed:{type:"eq",tag:"EQ ticket — NHE exception closed",title:"Create an EQ ticket — Exception Request",body:"Signed ER exception request obtained. Case is closed or beyond 30 days. Important: if Error Origin is Employee Error or Employer Error, do NOT pursue a carrier exception.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Exception Request (closed MOps case)",t:"fixed"},
-{n:"Shortcut",v:";ern",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Error Origin",v:"Select: Gusto Error | Carrier Error — Do NOT pursue exception if Employee Error or Employer Error",t:"sel"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Exception Request (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Error Origin",v:"Select: Gusto Error | Carrier Error — Do NOT pursue exception if Employee Error or Employer Error",t:"sel"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_air_nhe_closed:{type:"eq",tag:"EQ ticket — NHE additional info closed",title:"Create an EQ ticket — Additional Information Received",body:"Customer Care obtained requested information for a closed NHE MOps case.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Additional Information Received (closed MOps case)",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Additional Information Received (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},...BENS_EQ_TPL],note:null},
 
 r_status_nhe_closed:{type:"eq",tag:"EQ ticket — NHE status update closed",title:"Create an EQ ticket — Status Update",body:"EE/ER asking for status on a closed NHE case. Only use for cases with current or past follow-up dates. If NHE was sent to carrier with a future follow-up date, inform EE/ER it is still processing — do not create a ticket.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Status Update (closed MOps case)",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Status Update (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},...BENS_EQ_TPL],note:null},
 
 r_mien_term_open:{type:"benhelp",tag:"BenHelp Slack — termination missed/incorrect open",title:"Submit to BenHelp Slack channel",body:"Dismissed EE was terminated incorrectly or coverage is still showing active. Termination case is in-progress.",
-tpl:[
-{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Missed/Incorrect Termination (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";mien",t:"fixed"},
-{n:"Owner",v:"Member Ops - Termination",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},{n:"Ticket Reason Detail",v:"Missed/Incorrect Termination (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Termination",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_tedct_open:{type:"benhelp",tag:"BenHelp Slack — termination date change open",title:"Submit to BenHelp Slack channel",body:"Termination date needs to change and the term case is still in-progress.",
-tpl:[
-{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Termination Date Change (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";tedct",t:"fixed"},
-{n:"Owner",v:"Member Ops - Termination",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Previous Termination Date",v:"",t:"fill"},
-{n:"Correct Termination Date",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},{n:"Ticket Reason Detail",v:"Termination Date Change (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Termination",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Previous Termination Date",v:"",t:"fill"},{n:"Correct Termination Date",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
-r_esce_term_open:{type:"benhelp",tag:"BenHelp Slack — termination expedite open",title:"Submit to BenHelp Slack channel",body:"EE/ER requesting confirmation of a non-urgent termination. Case is in-progress with no follow-up or confirmation yet.",
-tpl:[
-{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Expedite Submission/Confirmation (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";esce",t:"fixed"},
-{n:"Owner",v:"Member Ops - Termination",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+r_esce_term_open:{type:"benhelp",tag:"BenHelp Slack — termination expedite open",title:"Submit to BenHelp Slack channel",body:"EE/ER requesting confirmation of a non-urgent termination. Case is in-progress.",
+tpl:[{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},{n:"Ticket Reason Detail",v:"Expedite Submission/Confirmation (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Termination",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_ern_term_open:{type:"ticket",tag:"Ticket required — MOps Termination",title:"Create a ticket — Exception Request (open termination case)",body:"Signed ER exception obtained for an in-progress termination case. Important: if Error Origin is Employee Error or Employer Error, do NOT pursue a carrier exception.",
-tpl:[
-{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Exception Request (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";ern",t:"fixed"},
-{n:"Owner",v:"Member Ops - Termination",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Error Origin",v:"Select: Gusto Error | Carrier Error — Do NOT pursue exception if Employee Error or Employer Error",t:"sel"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},{n:"Ticket Reason Detail",v:"Exception Request (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Termination",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Error Origin",v:"Select: Gusto Error | Carrier Error — Do NOT pursue exception if Employee Error or Employer Error",t:"sel"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_air_term_open:{type:"benhelp",tag:"BenHelp Slack — termination additional info open",title:"Submit to BenHelp Slack channel",body:"Customer Care obtained requested information for an in-progress termination case.",
-tpl:[
-{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Additional Information Received (open MOps case)",t:"fixed"},
-{n:"Owner",v:"Member Ops - Termination",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},{n:"Ticket Reason Detail",v:"Additional Information Received (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Termination",t:"fixed"},...BENS_EQ_TPL],note:null},
 
 r_status_term_open:{type:"benhelp",tag:"BenHelp Slack — termination status open",title:"Submit to BenHelp Slack channel",body:"EE/ER asking for status on a termination sent to the carrier. Create ticket only after confirming there are no updates in the term case after the posted follow-up date.",
-tpl:[
-{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Status Update (open MOps case)",t:"fixed"},
-{n:"Owner",v:"Member Ops - Termination",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},{n:"Ticket Reason Detail",v:"Status Update (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Termination",t:"fixed"},...BENS_EQ_TPL],note:null},
 
 r_mien_term_closed:{type:"eq",tag:"EQ ticket — termination missed/incorrect closed",title:"Create an EQ ticket — Missed/Incorrect Termination",body:"Dismissed EE was terminated incorrectly or coverage is still showing as active. Term case is closed.",
-tpl:[
-{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Missed/Incorrect Termination (closed MOps case)",t:"fixed"},
-{n:"Shortcut",v:";mien",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},{n:"Ticket Reason Detail",v:"Missed/Incorrect Termination (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_tedct_closed:{type:"eq",tag:"EQ ticket — termination date change closed",title:"Create an EQ ticket — Termination Date Change",body:"Termination date correction needed after EE has already been terminated and term case is closed.",
-tpl:[
-{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Termination Date Change (closed MOps case)",t:"fixed"},
-{n:"Shortcut",v:";tedct",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Previous Termination Date",v:"",t:"fill"},
-{n:"Correct Termination Date",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},{n:"Ticket Reason Detail",v:"Termination Date Change (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Previous Termination Date",v:"",t:"fill"},{n:"Correct Termination Date",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_esce_term_closed:{type:"eq",tag:"EQ ticket — termination expedite closed",title:"Create an EQ ticket — Expedite Submission/Confirmation",body:"EE/ER confirming termination after the EE termination case is closed.",
-tpl:[
-{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Expedite Submission/Confirmation (closed MOps case)",t:"fixed"},
-{n:"Shortcut",v:";esce",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},{n:"Ticket Reason Detail",v:"Expedite Submission/Confirmation (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_ern_term_closed:{type:"eq",tag:"EQ ticket — termination exception closed",title:"Create an EQ ticket — Exception Request (retroactive termination)",body:"Customer Care obtained a signed exception request by the ER for a retroactive EE termination. Important: if Error Origin is Employee Error or Employer Error, do NOT pursue a carrier exception.",
-tpl:[
-{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Exception Request (closed MOps case)",t:"fixed"},
-{n:"Shortcut",v:";ern",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Error Origin",v:"Select: Gusto Error | Carrier Error — Do NOT pursue exception if Employee Error or Employer Error",t:"sel"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},{n:"Ticket Reason Detail",v:"Exception Request (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Error Origin",v:"Select: Gusto Error | Carrier Error — Do NOT pursue exception if Employee Error or Employer Error",t:"sel"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_air_term_closed:{type:"eq",tag:"EQ ticket — termination additional info closed",title:"Create an EQ ticket — Additional Information Received",body:"Customer Care obtained requested information for a closed termination case.",
-tpl:[
-{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Additional Information Received (closed MOps case)",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},{n:"Ticket Reason Detail",v:"Additional Information Received (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},...BENS_EQ_TPL],note:null},
 
 r_status_term_closed:{type:"eq",tag:"EQ ticket — termination status closed",title:"Create an EQ ticket — Status Update",body:"EE/ER asking for status on a closed termination case with no confirmation, EE still on invoice, or benefits still active when they should not be.",
-tpl:[
-{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Status Update (closed MOps case)",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"Employee Termination",t:"fixed"},{n:"Ticket Reason Detail",v:"Status Update (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},...BENS_EQ_TPL],note:null},
 
 r_cien_qle_open:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — QLE Change in Enrollment (open case)",body:"EE/ER asking to change or cancel a QLE request within 30 days of the QLE event date. Case is in-progress.",
-tpl:[
-{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Change in Enrollment (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";cien",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+tpl:[{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Change in Enrollment (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
 r_mien_qle_open:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — QLE Incorrect Enrollment (open case)",body:"Discrepancy between QLE request submitted and actual benefits with the carrier. Case is in-progress.",
-tpl:[
-{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Incorrect Enrollment (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";mien",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+tpl:[{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Incorrect Enrollment (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
 r_esce_qle_open:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — QLE Expedite Submission (open case)",body:"EE/ER asking to expedite a non-urgent in-progress QLE. Submission to carrier will be expedited but carrier processing will not be.",
-tpl:[
-{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Expedite Submission (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";esce",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+tpl:[{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Expedite Submission (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
 r_ern_qle_open:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — QLE Exception Request (open case)",body:"Signed ER exception obtained for an in-progress QLE case. Important: if Error Origin is Employee Error or Employer Error, do NOT pursue a carrier exception.",
-tpl:[
-{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Exception Request (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";ern",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Error Origin",v:"Select: Gusto Error | Carrier Error — Do NOT pursue exception if Employee Error or Employer Error",t:"sel"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+tpl:[{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Exception Request (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Error Origin",v:"Select: Gusto Error | Carrier Error — Do NOT pursue exception if Employee Error or Employer Error",t:"sel"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
 r_status_qle_open:{type:"benhelp",tag:"BenHelp Slack — QLE status update open",title:"Submit to BenHelp Slack channel",body:"EE/ER asking for update on an in-progress QLE. Only use when the MOps case has a current or past follow-up date.",
-tpl:[
-{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Status Update (open MOps case)",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Status Update (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},...BENS_EQ_TPL],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
 r_clarify_qle_open:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — QLE Clarification Request (open case)",body:"EE/ER asking about proof validity, why an RFI was initiated, or why part of their QLE was not honored. Case is in-progress.",
-tpl:[
-{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Clarification Request (open MOps case)",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Clarification Request (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},...BENS_EQ_TPL],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
 r_air_qle_open:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — QLE Additional Info (open case)",body:"Customer Care obtained requested information for an in-progress QLE case.",
-tpl:[
-{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Additional Information Received",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Additional Information Received",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},...BENS_EQ_TPL],note:null},
 
 r_cien_qle_closed:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — QLE Change in Enrollment (closed case)",body:"EE/ER asking to change or cancel a QLE within 30 days of event date. Case is closed.",
-tpl:[
-{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Change in Enrollment (closed MOps case)",t:"fixed"},
-{n:"Shortcut",v:";cien",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Change in Enrollment (closed MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_mien_qle_closed:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — QLE Incorrect Enrollment (closed case)",body:"Discrepancy between QLE request and carrier. Case is closed.",
-tpl:[
-{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Incorrect Enrollment (closed MOps case)",t:"fixed"},
-{n:"Shortcut",v:";mien",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Incorrect Enrollment (closed MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_esce_qle_closed:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — QLE Expedite Submission (closed case)",body:"QLE is still eligible — within 30 days of event date and adequate proof already provided.",
-tpl:[
-{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Expedite Submission (closed MOps case)",t:"fixed"},
-{n:"Shortcut",v:";esce",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Expedite Submission (closed MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
-r_ern_qle_closed:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — QLE Exception Request (closed case)",body:"Outside 30 days. Signed ER exception obtained. Confirm exception request aligns with updated Exception Request Guidelines before creating. Important: if Error Origin is Employee Error or Employer Error, do NOT pursue a carrier exception.",
-tpl:[
-{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Exception Request (closed MOps case)",t:"fixed"},
-{n:"Shortcut",v:";ern",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Error Origin",v:"Select: Gusto Error | Carrier Error — Do NOT pursue exception if Employee Error or Employer Error",t:"sel"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+r_ern_qle_closed:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — QLE Exception Request (closed case)",body:"Outside 30 days. Signed ER exception obtained. Confirm exception request aligns with updated Exception Request Guidelines. Important: if Error Origin is Employee Error or Employer Error, do NOT pursue a carrier exception.",
+tpl:[{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Exception Request (closed MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Error Origin",v:"Select: Gusto Error | Carrier Error — Do NOT pursue exception if Employee Error or Employer Error",t:"sel"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_status_qle_closed:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — QLE Status Update (closed case)",body:"EE/ER requesting update on a closed QLE case.",
-tpl:[
-{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Status Update (closed MOps case)",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Status Update (closed MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},...BENS_EQ_TPL],note:null},
 
 r_clarify_qle_closed:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — QLE Clarification Request (closed case)",body:"EE/ER asking about proof validity, why request wasn't honored, or case was canceled without QLE being processed.",
-tpl:[
-{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Clarification Request (closed MOps case)",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Clarification Request (closed MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},...BENS_EQ_TPL],note:null},
 
 r_air_qle_closed:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — QLE Additional Info (closed case)",body:"Customer Care obtained requested information for a closed QLE case.",
-tpl:[
-{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Additional Information Received",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"QLE Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Additional Information Received",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},...BENS_EQ_TPL],note:null},
 
 r_cien_oe:{type:"eq",tag:"EQ ticket — OE change in enrollment",title:"Create an EQ ticket — Change in Enrollment (OE)",body:"Benefit Order has been fulfilled and EE has re-submitted updated OE elections.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Change in enrollment (closed MOps case)",t:"fixed"},
-{n:"Shortcut",v:";cien",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Change in enrollment (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_mien_oe:{type:"eq",tag:"EQ ticket — OE missed/incorrect",title:"Create an EQ ticket — Missed/Incorrect Enrollment (OE)",body:"Wrong plan, missing dependent, or extra dependent after OE Benefit Order has been fulfilled.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Missed/Incorrect Enrollment (closed MOps case)",t:"fixed"},
-{n:"Shortcut",v:";mien",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Missed/Incorrect Enrollment (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_air_oe:{type:"eq",tag:"EQ ticket — OE additional info/status",title:"Create an EQ ticket — Additional Info or Status Update (OE)",body:"Customer Care obtained requested info for a recently fulfilled OE, or EE/ER is asking for an update.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Additional Information Received (closed MOps case)",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Additional Information Received (closed MOps case)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},...BENS_EQ_TPL],note:null},
 
 r_cobra_notice:{type:"ticket",tag:"Ticket required — MOps Continuation",title:"Create a ticket — COBRA Continuation Manual Notice",body:"First confirm the EE's notice isn't already in the EE's Documents tab in-app. Use only if notice hasn't been generated or there are issues generating it.",
-tpl:[
-{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"COBRA Continuation Manual Notice",t:"fixed"},
-{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},
-{n:"Template",v:"Continuation/COBRA Template",t:"fixed"}
-],note:null},
+pre:COBRA_PRE,
+tpl:[{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"COBRA Continuation Manual Notice",t:"fixed"},{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},...COBRA_TPL],note:null},
 
 r_cobra_oe:{type:"ticket",tag:"Ticket required — MOps Continuation",title:"Create a ticket — Continuation Manual OE",body:"EE on continuation coverage needs to choose benefits for the new policy year via Open Enrollment.",
-tpl:[
-{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Continuation - Manual OE",t:"fixed"},
-{n:"Owner",v:"Member Ops - Continuation",t:"fixed"}
-],note:null},
+pre:COBRA_PRE,
+tpl:[{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Continuation - Manual OE",t:"fixed"},{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},...COBRA_TPL],note:null},
 
-r_cobra_misclass:{type:"ticket",tag:"Ticket required — MOps Continuation",title:"Create a ticket — Misclassified Company COBRA Status",body:"MOps needs to update the company's continuation status with carriers (federal COBRA vs. state continuation). Usually originates when EEs attempt to enroll and carrier flags misclassification.",
-tpl:[
-{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Misclassified Company COBRA Status Updates",t:"fixed"},
-{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},
-{n:"Template",v:"Continuation/COBRA Template",t:"fixed"}
-],note:null},
+r_cobra_misclass:{type:"ticket",tag:"Ticket required — MOps Continuation",title:"Create a ticket — Misclassified Company COBRA Status",body:"MOps needs to update the company's continuation status with carriers (federal COBRA vs. state continuation).",
+pre:COBRA_PRE,
+tpl:[{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Misclassified Company COBRA Status Updates",t:"fixed"},{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},...COBRA_TPL],note:null},
 
-r_cobra_general:{type:"ticket",tag:"Ticket required — MOps Continuation",title:"Create a ticket — Continuation General Question",body:"Detailed COBRA/Continuation question that cannot be answered by resources, a captain, or a PE. Check the #ask-cobra channel first — only create this ticket if it did not resolve the question.",
-tpl:[
-{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Continuation - General Question",t:"fixed"},
-{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},
-{n:"Template",v:"Continuation/COBRA Template",t:"fixed"}
-],note:"Check #ask-cobra channel before creating this ticket."},
+r_cobra_general:{type:"ticket",tag:"Ticket required — MOps Continuation",title:"Create a ticket — Continuation General Question",body:"Detailed COBRA/Continuation question not answerable by resources, a captain, or a PE. Check the #ask-cobra channel first — only create this ticket if it did not resolve the question.",
+pre:COBRA_PRE,
+tpl:[{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Continuation - General Question",t:"fixed"},{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},...COBRA_TPL],note:"Check #ask-cobra channel before creating this ticket."},
 
 r_cobra_basic:{type:"ticket",tag:"Ticket required — MOps Continuation",title:"Create a ticket — BASIC Pacific",body:"BASIC Pacific request that requires action from MOps.",
-tpl:[
-{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Continuation - BASIC Pacific",t:"fixed"},
-{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},
-{n:"Template",v:"Continuation/COBRA Template",t:"fixed"}
-],note:null},
+pre:COBRA_PRE,
+tpl:[{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Continuation - BASIC Pacific",t:"fixed"},{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},...COBRA_TPL],note:null},
 
-r_cobra_term:{type:"ticket",tag:"Ticket required — MOps Continuation",title:"Create a ticket — Continuation Out-of-App Termination",body:"EE/ER requests to terminate continuation coverage. MOps will submit to carrier and leave a note in the ticket with the carrier comms case for updates.",
-tpl:[
-{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Continuation - Out of App Termination",t:"fixed"},
-{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},
-{n:"Template",v:"Continuation/COBRA Template",t:"fixed"}
-],note:null},
+r_cobra_term:{type:"ticket",tag:"Ticket required — MOps Continuation",title:"Create a ticket — Continuation Out-of-App Termination",body:"EE/ER requests to terminate continuation coverage. MOps will submit to carrier and leave a note with the carrier comms case for updates.",
+pre:COBRA_PRE,
+tpl:[{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Continuation - Out of App Termination",t:"fixed"},{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},...COBRA_TPL],note:null},
 
 r_cobra_exception:{type:"ticket",tag:"Ticket required — MOps Continuation",title:"Create a ticket — Continuation Exception Request",body:"Signed exception request obtained via escalation case by the MOps Continuation team.",
-tpl:[
-{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Continuation - Exception Request",t:"fixed"},
-{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},
-{n:"Template",v:"Continuation/COBRA Template",t:"fixed"}
-],note:null},
+pre:COBRA_PRE,
+tpl:[{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Continuation - Exception Request",t:"fixed"},{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},...COBRA_TPL],note:null},
 
-r_cobra_expedite:{type:"ticket",tag:"Ticket required — MOps Continuation",title:"Create a ticket — Continuation Expedite Enrollment",body:"EE/ER asking to submit a non-ATC enrollment request. Submission to carrier will be expedited but carrier processing will not be. Also use if enrollment hasn't been submitted within 3 business days of EE signing in-app.",
-tpl:[
-{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Continuation - Expedite Enrollment",t:"fixed"},
-{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},
-{n:"Template",v:"Continuation/COBRA Template",t:"fixed"}
-],note:null},
+r_cobra_expedite:{type:"ticket",tag:"Ticket required — MOps Continuation",title:"Create a ticket — Continuation Expedite Enrollment",body:"EE/ER asking to submit a non-ATC enrollment. Submission to carrier will be expedited but carrier processing will not be. Also use if enrollment hasn't been submitted within 3 business days of EE signing in-app.",
+pre:COBRA_PRE,
+tpl:[{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Continuation - Expedite Enrollment",t:"fixed"},{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},...COBRA_TPL],note:null},
 
 r_cobra_atc:{type:"ticket",tag:"Ticket required — MOps Continuation — ATC",title:"Create a ticket — Continuation Access to Care",body:"EE or dependent needs to access care ASAP. Enrollment will be expedited on the carrier's end.",
-tpl:[
-{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Continuation - Access To Care",t:"fixed"},
-{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},
-{n:"Template",v:"Continuation/COBRA Template",t:"fixed"}
-],note:null},
+pre:COBRA_PRE,
+tpl:[{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Continuation - Access To Care",t:"fixed"},{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},...COBRA_TPL],note:null},
 
-r_cobra_status:{type:"ticket",tag:"Ticket required — MOps Continuation",title:"Create a ticket — Continuation Status Update",body:"EE/ER asking for update on a continuation enrollment. Only create ticket when the case follow-up date is in the past and there are no updates in the Continuation Case.",
-tpl:[
-{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Continuation - Status Update",t:"fixed"},
-{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},
-{n:"Template",v:"Continuation/COBRA Template",t:"fixed"}
-],note:null},
+r_cobra_status:{type:"ticket",tag:"Ticket required — MOps Continuation",title:"Create a ticket — Continuation Status Update",body:"EE/ER asking for update on a continuation enrollment. Only create when the case follow-up date is in the past and there are no updates in the Continuation Case.",
+pre:COBRA_PRE,
+tpl:[{n:"Ticket Reason",v:"Continuation / COBRA Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Continuation - Status Update",t:"fixed"},{n:"Owner",v:"Member Ops - Continuation",t:"fixed"},...COBRA_TPL],note:null},
 
 r_demo_exp_open:{type:"benhelp",tag:"BenHelp Slack — demo expedite open",title:"Submit to BenHelp Slack channel",body:"EE/ER requesting expedite of a member or group update. MOps case or Benefit Order is still in-progress.",
-tpl:[
-{n:"Ticket Reason",v:"Information Updates",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Expedite Submission (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";esce",t:"fixed"},
-{n:"Owner",v:"Member Ops - Updates",t:"fixed"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+tpl:[{n:"Ticket Reason",v:"Information Updates",t:"fixed"},{n:"Ticket Reason Detail",v:"Expedite Submission (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Updates",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"}],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
 r_demo_air_open:{type:"benhelp",tag:"BenHelp Slack — demo additional info open",title:"Submit to BenHelp Slack channel",body:"Customer Care obtained requested information for an in-progress update case.",
-tpl:[
-{n:"Ticket Reason",v:"Information Updates",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Additional Information Received (open MOps case)",t:"fixed"},
-{n:"Owner",v:"Member Ops - Updates",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"Information Updates",t:"fixed"},{n:"Ticket Reason Detail",v:"Additional Information Received (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Updates",t:"fixed"},...BENS_EQ_TPL],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
 r_demo_status_open:{type:"benhelp",tag:"BenHelp Slack — demo status open",title:"Submit to BenHelp Slack channel",body:"EE/ER asking for status on an in-progress demographic update case. Create ticket only after confirming there has been no action in the in-progress MOps Update case.",
-tpl:[
-{n:"Ticket Reason",v:"Information Updates",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Status Update (open MOps case)",t:"fixed"},
-{n:"Owner",v:"Member Ops - Updates",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"Information Updates",t:"fixed"},{n:"Ticket Reason Detail",v:"Status Update (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Updates",t:"fixed"},...BENS_EQ_TPL],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
-r_nida:{type:"ticket",tag:"Ticket required — MOps NHE",title:"Create a ticket — SSN or DOB Information Update",body:"Use for SSN or DOB corrections/updates to fulfilled MOps cases. Owner is always Member Ops - New Hire Enrollment regardless of case status.",
-tpl:[
-{n:"Ticket Reason",v:"Information Update",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Member Update (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";nida",t:"fixed"},
-{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Dependent Name (if applicable)",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Hippo DOB",v:"",t:"fill"},
-{n:"Carrier DOB",v:"",t:"fill"},
-{n:"Correct DOB",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+r_nida:{type:"ticket",tag:"Ticket required — MOps NHE",title:"Create a ticket — SSN or DOB Information Update",body:"Use for SSN or DOB corrections/updates. Owner is always Member Ops - New Hire Enrollment regardless of case status.",
+tpl:[{n:"Ticket Reason",v:"Information Update",t:"fixed"},{n:"Ticket Reason Detail",v:"Member Update (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},{n:"Group Name",v:"",t:"fill"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Dependent Name (if applicable)",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Hippo DOB",v:"",t:"fill"},{n:"Carrier DOB",v:"",t:"fill"},{n:"Correct DOB",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
-r_updep:{type:"ticket",tag:"Ticket required — MOps Updates",title:"Create a ticket — Name Change",body:"Use for EE or dependent name changes. For group-level updates not related to mailing/filing address changes, use Group Demographic Change instead.",
-tpl:[
-{n:"Ticket Reason",v:"Information Update",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Select: Member Update (open MOps case) | Member Update (closed MOps case)",t:"sel"},
-{n:"Shortcut",v:";updep",t:"fixed"},
-{n:"Owner",v:"Member Ops - Updates",t:"fixed"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Dependent Name (if applicable)",v:"",t:"fill"},
-{n:"Carrier(s) Name (list all carriers with incorrect info)",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Duplicate Dep or Dep's Name in Carrier portal",v:"",t:"fill"},
-{n:"Correct Info",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"}
-],note:null},
+r_updep:{type:"ticket",tag:"Ticket required — MOps Updates",title:"Create a ticket — Name Change",body:"Use for EE or dependent name changes. For group-level updates not related to mailing/filing address, use Group Demographic Change instead.",
+tpl:[{n:"Ticket Reason",v:"Information Update",t:"fixed"},{n:"Ticket Reason Detail",v:"Select: Member Update (open MOps case) | Member Update (closed MOps case)",t:"sel"},{n:"Owner",v:"Member Ops - Updates",t:"fixed"},{n:"Group Name",v:"",t:"fill"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Dependent Name (if applicable)",v:"",t:"fill"},{n:"Carrier(s) Name (list all carriers with incorrect info)",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Duplicate Dep or Dep's Name in Carrier portal",v:"",t:"fill"},{n:"Correct Info",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"}],note:null},
 
 r_demo_exp_closed:{type:"ticket",tag:"Ticket required — MOps Updates",title:"Create a ticket — Demo Expedite (closed case)",body:"EE/ER requesting expedite of an update after MOps case or Benefit Order has been fulfilled.",
-tpl:[
-{n:"Ticket Reason",v:"Information Updates",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Expedite Submission (open MOps case)",t:"fixed"},
-{n:"Shortcut",v:";esce",t:"fixed"},
-{n:"Owner",v:"Member Ops - Updates",t:"fixed"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+tpl:[{n:"Ticket Reason",v:"Information Updates",t:"fixed"},{n:"Ticket Reason Detail",v:"Expedite Submission (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Updates",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"}],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
 r_demo_air_closed:{type:"ticket",tag:"Ticket required — MOps Updates",title:"Create a ticket — Demo Additional Info (closed case)",body:"Customer Care obtained requested information for a closed update case.",
-tpl:[
-{n:"Ticket Reason",v:"Information Updates",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Additional Information Received (open MOps case)",t:"fixed"},
-{n:"Owner",v:"Member Ops - Updates",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"Information Updates",t:"fixed"},{n:"Ticket Reason Detail",v:"Additional Information Received (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Updates",t:"fixed"},...BENS_EQ_TPL],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
-r_demo_status_closed:{type:"ticket",tag:"Ticket required — MOps Updates",title:"Create a ticket — Demo Status Update (closed case)",body:"EE/ER asking for status on a closed demographic update case. Create only after confirming there has been no action in the fulfilled MOps Update case.",
-tpl:[
-{n:"Ticket Reason",v:"Information Updates",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Status Update (open MOps case)",t:"fixed"},
-{n:"Owner",v:"Member Ops - Updates",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
+r_demo_status_closed:{type:"ticket",tag:"Ticket required — MOps Updates",title:"Create a ticket — Demo Status Update (closed case)",body:"EE/ER asking for status on a closed demographic update case.",
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"Information Updates",t:"fixed"},{n:"Ticket Reason Detail",v:"Status Update (open MOps case)",t:"fixed"},{n:"Owner",v:"Member Ops - Updates",t:"fixed"},...BENS_EQ_TPL],note:"If marked ATC, ticket re-routes to Escalations and Quality (EQ)."},
 
 r_tada_cien:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — TAdA Change in Enrollment",body:"EE/ER requesting to change or cancel a TAdA NHE, QLE, or Term request within 30 days of the effective date.",
-tpl:[
-{n:"Ticket Reason",v:"TAdA Member Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Change in Enrollment",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"TAdA Member Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Change in Enrollment",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},...BENS_EQ_TPL],note:null},
 
 r_tada_mien:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — TAdA Missed/Incorrect Enrollment or Termination",body:"EE's TAdA benefits were missed or processed incorrectly. A related SFDC case must exist. Applies to NHEs, Terminations, and QLEs.",
-tpl:[
-{n:"Ticket Reason",v:"TAdA Member Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Missed/Incorrect Enrollments and Terminations",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"TAdA Member Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Missed/Incorrect Enrollments and Terminations",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},...BENS_EQ_TPL],note:null},
 
-r_tada_special:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — TAdA Special Request",body:"Use for re-hire re-enrollment in TAdA that needs to be updated in Alegeus portal, or EE's HSA termination was missed after losing eligibility and no term case was ever created.",
-tpl:[
-{n:"Ticket Reason",v:"TAdA Member Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Special Requests",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+r_tada_special:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — TAdA Special Request",body:"Use for re-hire re-enrollment in TAdA that needs updating in Alegeus portal, or EE's HSA termination was missed after losing eligibility and no term case was ever created.",
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"TAdA Member Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Special Requests",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},...BENS_EQ_TPL],note:null},
 
 r_tada_exp:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — TAdA Expedite Request",body:"EE/ER asking to expedite processing of a TAdA Member Update, NHE, QLE, or Term request.",
-tpl:[
-{n:"Ticket Reason",v:"TAdA Member Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Expedite Request",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"TAdA Member Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Expedite Request",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},...BENS_EQ_TPL],note:null},
 
 r_tada_clarify:{type:"ticket",tag:"Ticket required — MOps Adjudication",title:"Create a ticket — TAdA Clarification Request",body:"EE/ER asking about a TAdA account involving a specific TAdA case. Case types include Member Update, NHE, Termination, QLE, and Failure audits.",
-tpl:[
-{n:"Ticket Reason",v:"TAdA Member Issue",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Clarification Request",t:"fixed"},
-{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},
-{n:"Template",v:"BenS/EQ Template",t:"fixed"}
-],note:null},
+pre:BENS_EQ_PRE,
+tpl:[{n:"Ticket Reason",v:"TAdA Member Issue",t:"fixed"},{n:"Ticket Reason Detail",v:"Clarification Request",t:"fixed"},{n:"Owner",v:"Member Ops - Adjudication",t:"fixed"},...BENS_EQ_TPL],note:null},
 
-r_eq_transfer:{type:"eq",tag:"EQ ticket — EE Transfer to Affiliate",title:"Create an EQ ticket — EE Transfer to Affiliate (Umbrella Policy)",body:"Use when an ER wants to transfer an active, FT-eligible EE to a parent or sister company under an umbrella policy post-fulfillment. Use specifically when the transfer involves active TAdA subscriptions.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"EE Transfer to Affiliate (Umbrella Policy)",t:"fixed"},
-{n:"Shortcut",v:";eaft",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name EE is currently active under",v:"",t:"fill"},
-{n:"Group Name EE wants to transfer to",v:"",t:"fill"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"Select: EE Transfer | EE Transfer Correction",t:"sel"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+r_eq_transfer:{type:"eq",tag:"EQ ticket — EE Transfer to Affiliate",title:"Create an EQ ticket — EE Transfer to Affiliate (Umbrella Policy)",body:"Use when an ER wants to transfer an active, FT-eligible EE to a parent or sister company under an umbrella policy post-fulfillment, specifically when the transfer involves active TAdA subscriptions.",
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"EE Transfer to Affiliate (Umbrella Policy)",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name EE is currently active under",v:"",t:"fill"},{n:"Group Name EE wants to transfer to",v:"",t:"fill"},{n:"Carrier Name",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"Select: EE Transfer | EE Transfer Correction",t:"sel"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
-r_ewcd_open:{type:"benhelp",tag:"BenHelp Slack — rogue change open case",title:"Submit to BenHelp Slack channel",body:"EE or ER enrolled or terminated directly with carrier. Case is in-progress. Note: if ER went rogue to add a new plan mid-year, this is a Benefit Transfers ticket, not a BenHelp/EQ ticket.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"EE/ER enrolled/terminated with carrier directly",t:"fixed"},
-{n:"Shortcut",v:";ewcd",t:"fixed"},
-{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Record Type",v:"Select: New Hire Enrollment | Member Termination | Qualifying Life Event",t:"sel"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+r_ewcd_open:{type:"benhelp",tag:"BenHelp Slack — rogue change open case",title:"Submit to BenHelp Slack channel",body:"EE or ER enrolled or terminated directly with carrier. Case is in-progress. Note: if ER went rogue to add a new plan mid-year, this is a Benefit Transfers ticket, not a BenHelp ticket.",
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"EE/ER enrolled/terminated with carrier directly",t:"fixed"},{n:"Owner",v:"Member Ops - New Hire Enrollment",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Group Name",v:"",t:"fill"},{n:"Record Type",v:"Select: New Hire Enrollment | Member Termination | Qualifying Life Event",t:"sel"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
-r_ewcd_closed:{type:"eq",tag:"EQ ticket — rogue change closed/no case",title:"Create an EQ ticket — EE/ER Enrolled/Terminated with Carrier Directly",body:"EE or ER went rogue and enrolled or terminated directly with carrier. Case is closed or no existing case. Create subscriptions in Hippo to match what the carrier has on file. Note: if ER went rogue to add a new plan mid-year, this is a Benefit Transfers ticket, not EQ.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"EE/ER enrolled/terminated with carrier directly",t:"fixed"},
-{n:"Shortcut",v:";ewcd",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Dependents Impacted",v:"Yes / No",t:"sel"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Record Type",v:"Select: New Hire Enrollment | Member Termination | Qualifying Life Event",t:"sel"},
-{n:"Carrier Name",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+r_ewcd_closed:{type:"eq",tag:"EQ ticket — rogue change closed/no case",title:"Create an EQ ticket — EE/ER Enrolled/Terminated with Carrier Directly",body:"EE or ER went rogue and enrolled or terminated directly with carrier. Case is closed or no existing case. Note: if ER went rogue to add a new plan mid-year, this is a Benefit Transfers ticket, not EQ.",
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"EE/ER enrolled/terminated with carrier directly",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Dependents Impacted",v:"Yes / No",t:"sel"},{n:"Group Name",v:"",t:"fill"},{n:"Record Type",v:"Select: New Hire Enrollment | Member Termination | Qualifying Life Event",t:"sel"},{n:"Carrier Name",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_mehsn:{type:"eq",tag:"EQ ticket — Misfiled EE Hire Status",title:"Create an EQ ticket — Misfiled EE Hire Status",body:"ER accidentally changed the EE's hire date, changed status to part-time, or accidentally terminated the EE and needs reinstatement. Confirm actual full-time hire date with ER before creating ticket.",
-tpl:[
-{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Misfiled EE Hire Status",t:"fixed"},
-{n:"Shortcut",v:";mehsn",t:"fixed"},
-{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},
-{n:"EE Name",v:"",t:"fill"},
-{n:"Group Name",v:"",t:"fill"},
-{n:"Carrier Name(s)",v:"",t:"fill"},
-{n:"Line of Coverage",v:"",t:"fill"},
-{n:"Current Hire Date",v:"",t:"fill"},
-{n:"Correct Hire Date",v:"",t:"fill"},
-{n:"When should the benefits be effective?",v:"",t:"fill"},
-{n:"Related Case Number(s)",v:"",t:"fill"},
-{n:"Summary of the Issue",v:"",t:"fill"},
-{n:"Action Needed",v:"",t:"fill"},
-{n:"Additional Notes",v:"",t:"fill"}
-],note:null},
+tpl:[{n:"Ticket Reason",v:"New Hire Enrollment",t:"fixed"},{n:"Ticket Reason Detail",v:"Misfiled EE Hire Status",t:"fixed"},{n:"Owner",v:"Escalations and Quality (EQ)",t:"fixed"},{n:"EE Name",v:"",t:"fill"},{n:"Group Name",v:"",t:"fill"},{n:"Carrier Name(s)",v:"",t:"fill"},{n:"Line of Coverage",v:"",t:"fill"},{n:"Current Hire Date",v:"",t:"fill"},{n:"Correct Hire Date",v:"",t:"fill"},{n:"When should the benefits be effective?",v:"",t:"fill"},{n:"Related Case Number(s)",v:"",t:"fill"},{n:"Summary of the Issue",v:"",t:"fill"},{n:"Action Needed",v:"",t:"fill"},{n:"Additional Notes",v:"",t:"fill"}],note:null},
 
 r_bor_mem:{type:"ticket",tag:"Ticket required — Benefits Transfers",title:"Create a ticket — BOR Member-Level Correction",body:"Use for member-level corrections that occurred during or as a result of the BOR process.",
-tpl:[
-{n:"Ticket Reason",v:"Corrective Action Needed",t:"fixed"},
-{n:"Ticket Reason Detail",v:"Select: Dependent incorrectly added | NHE/Termination/QLE case not created | Dependent missing from subscription | Employee not enrolled | Employee not terminated | Unprocessed Subscriptions",t:"sel"},
-{n:"Owner",v:"Benefits Transfers",t:"fixed"},
-{n:"Template",v:"BOR Template",t:"fixed"}
-],note:null}
+tpl:[{n:"Ticket Reason",v:"Corrective Action Needed",t:"fixed"},{n:"Ticket Reason Detail",v:"Select: Dependent incorrectly added | NHE/Termination/QLE case not created | Dependent missing from subscription | Employee not enrolled | Employee not terminated | Unprocessed Subscriptions",t:"sel"},{n:"Owner",v:"Benefits Transfers",t:"fixed"},...BOR_TPL],note:null}
 };
 
 let history=[];
@@ -1485,7 +689,7 @@ function renderProg(d,t){
   }
 }
 
-function bc(parent){
+function addBc(parent){
   if(!history.length)return;
   const b=document.createElement('div');b.className='bc';
   history.forEach(h=>{
@@ -1501,31 +705,24 @@ function copyTpl(fields,btn){
   navigator.clipboard.writeText(lines).then(()=>{
     btn.textContent='Copied!';
     setTimeout(()=>btn.textContent='Copy template text',2000);
-  }).catch(()=>{
-    btn.textContent='Select text above to copy';
-  });
+  }).catch(()=>btn.textContent='Select text above to copy');
 }
 
 function render(id){
   const main=document.getElementById('main');main.innerHTML='';
-
   if(R[id]){
     const r=R[id];
     renderProg(5,5);
     const wrap=document.createElement('div');
-    bc(wrap);
+    addBc(wrap);
     const res=document.createElement('div');
     res.className='result '+r.type;
-
-    let html=`<div class="rtag">${r.tag}</div><div class="rtitle">${r.title}</div><div class="rbody">${r.body}</div>`;
-    res.innerHTML=html;
-
+    res.innerHTML=`<div class="rtag">${r.tag}</div><div class="rtitle">${r.title}</div><div class="rbody">${r.body}</div>`;
     if(r.pre){
       const ps=document.createElement('div');ps.className='presteps';
       ps.innerHTML=`<div class="presteps-lbl">${r.pre.lbl}</div><div class="presteps-body">${r.pre.body}</div>`;
       res.appendChild(ps);
     }
-
     if(r.tpl){
       const tog=document.createElement('button');tog.className='tpl-toggle';tog.textContent='Show template';
       const drawer=document.createElement('div');drawer.className='tpl-drawer';
@@ -1536,8 +733,8 @@ function render(id){
         const fn=document.createElement('div');fn.className='field-name';fn.textContent=f.n;
         const fv=document.createElement('div');
         fv.className='field-val'+(f.t==='fill'?' fill':f.t==='sel'?' sel':'');
-        if(f.t==='fixed'&&f.v.startsWith('http')){fv.innerHTML=`<a href="${f.v}" target="_blank">${f.v}</a>`;}
-        else{fv.textContent=f.v||'[fill in]';}
+        fv.style.whiteSpace='pre-line';
+        fv.textContent=f.v||'[fill in]';
         fd.appendChild(fn);fd.appendChild(fv);
         drawer.appendChild(fd);
       });
@@ -1548,15 +745,12 @@ function render(id){
         drawer.classList.toggle('open');
         tog.textContent=drawer.classList.contains('open')?'Hide template':'Show template';
       };
-      res.appendChild(tog);
-      res.appendChild(drawer);
+      res.appendChild(tog);res.appendChild(drawer);
     }
-
     if(r.note){
       const nb=document.createElement('div');nb.className='notebox';nb.textContent=r.note;
       res.appendChild(nb);
     }
-
     wrap.appendChild(res);
     const rb=document.createElement('button');rb.className='restart-btn';rb.textContent='Start over for a new situation';
     rb.onclick=()=>{history=[];render('start');};
@@ -1564,11 +758,10 @@ function render(id){
     main.appendChild(wrap);
     return;
   }
-
   const node=N[id];if(!node)return;
   renderProg(node.d,node.t);
   const card=document.createElement('div');card.className='card';
-  bc(card);
+  addBc(card);
   const lbl=document.createElement('div');lbl.className='step-lbl';lbl.textContent=node.lbl;card.appendChild(lbl);
   const q=document.createElement('div');q.className='question';q.textContent=node.q;card.appendChild(q);
   const opts=document.createElement('div');opts.className='opts';
@@ -1585,7 +778,6 @@ function render(id){
   }
   main.appendChild(card);
 }
-
 render('start');
 </script>
 </body>
